@@ -1,39 +1,46 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { Stack, Tabs} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { ClerkProvider } from '@clerk/clerk-expo'
+import { tokenCache } from '@/cache';
+import * as SplashScreen from 'expo-splash-screen';
+import { MaterialIcons } from '@expo/vector-icons';
+import { CameraProvider, handlePicture, handleClose } from '@/context/CameraContext';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from'react-native-gesture-handler';
+import { LogBox } from 'react-native';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+
+LogBox.ignoreLogs(['Warning: TNodeChildrenRenderer: ']);
+
+
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
+
+if (!publishableKey) {
+  throw new Error(
+    'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env',
+  )
+} 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+// SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <CameraProvider onPicture={handlePicture} onClose={handleClose}>
+            <Stack>
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(initial)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+              <Stack.Screen name="article" />
+              <Stack.Screen name="add-new-location" options={{headerShown: false}} />
+              <Stack.Screen name="camera" options={{headerShown: false}}/>
+            </Stack>
+            <StatusBar style="auto" />
+        </CameraProvider>
+      </GestureHandlerRootView>
+    </ClerkProvider>
   );
 }

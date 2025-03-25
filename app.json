@@ -1,21 +1,38 @@
 {
   "expo": {
-    "name": "garbage_app",
-    "slug": "garbage_app",
+    "name": "Eco CSM",
+    "slug": "eco-csm",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyDw10T12hg1Ez4nWWeYwDZVawGPr4XkyyM"
+      },
+      "googleServicesFile": "GoogleService-Info.plist",
+      "bundleIdentifier": "eco-csm.csmiguel.pt"
     },
     "android": {
+      "package": "eco_csm.csmiguel.pt",
+      "googleServicesFile": "google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDw10T12hg1Ez4nWWeYwDZVawGPr4XkyyM"
+        }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -27,15 +44,31 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/eco_csm.png",
+          "imageWidth": 300,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-location",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Autorize Eco CSM aceder à sua camera"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "aa312461-695f-4d79-b14c-a71310d330f9"
+      }
+    },
+    "owner": "bernandre07"
   }
 }
