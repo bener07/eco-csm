@@ -6,6 +6,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { Article, LocationData } from '@/constants/dataTypes';
 import { requestLocationPermission } from '@/utils/permissions';
 import WeatherInfo from '@/components/weatherChart';
+import { useAuth } from '@clerk/clerk-expo';
 import getCurrentWeather from '@/utils/weather';
 
 
@@ -26,6 +27,7 @@ export default function HomeScreen() {
   const [location, setLocation] = useState<Location|null>(null);
   const [pollutedLocations, setLocations] = useState<LocationData[]>([]); // Dados de exemplo para locais poluídos
   const screenWidth = Dimensions.get('window').width;
+  const { isSignedIn } = useAuth();
   // Dados de exemplo para locais poluídos
 
 
@@ -76,7 +78,6 @@ export default function HomeScreen() {
   useEffect(()=>{
     if(location !== null) {
       // Dados para o gráfico de progresso
-      console.log("Location permission");
       getCurrentWeather(location.coords.latitude, location.coords.longitude, setWeatherData);
     };
   }, [location]);

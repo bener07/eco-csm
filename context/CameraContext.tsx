@@ -17,7 +17,6 @@ const CameraContext = createContext<CameraContextType | undefined>(undefined);
 
 const updatePhotosInFirebase = (id:string, pictures:any) => {
     pictures.forEach((pic:any) => {
-        console.log(pic.file)
         updateImagesArray(id, pic.file);
     });
 
@@ -67,7 +66,6 @@ export const CameraProvider = ({ children, onPicture, onClose }: { children: Rea
     );
 };
 export const handlePicture = (pictures:string[], location:LocationData) => {
-    console.log("Location ", location.color);
     uploadPhotos(pictures).then((pics) => updatePhotosInFirebase(location?.id, pics));
     handleClose();
 }

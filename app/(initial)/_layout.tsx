@@ -68,7 +68,6 @@ export default function PublicLayout() {
                 e.preventDefault(); // Impede a navegação para a tab
                 router.push('/(auth)/sign-in'); // Redireciona para a tela de login
             } else {
-                console.log('User logged in');
                 // Navegação para a tela de perfil já é tratada automaticamente
             }
           },

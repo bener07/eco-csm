@@ -20,10 +20,9 @@ export default function AuthRoutesLayout() {
       <Text style={styles.screenText}></Text>
     </View>
     <Stack>
-      <Stack.Screen name="sign-in" options={{ title: 'Login', headerShown: false }} />
-      <Stack.Screen name="sign-up" options={{ title: 'Register', headerShown: false}} />
-      <Stack.Screen name="reset-password" options={{ title: 'Recuperar password', headerShown: false }} />
-      <Stack.Screen name="verify-email" options={{ title: 'Verificar Email', headerShown: false }} />
+      <Stack.Screen name="add-new-location" options={{headerShown: false }} />
+      <Stack.Screen name="article" options={{headerShown: false }} />
+      <Stack.Screen name="camera" options={{headerShown: false }} />
     </Stack>
   </>
   );

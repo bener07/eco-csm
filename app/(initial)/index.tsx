@@ -3,7 +3,6 @@ import { StyleSheet, View, Text, TouchableOpacity, Alert} from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebaseConfig'; // Ajuste o caminho conforme necessário
-import { useUser } from '@clerk/clerk-expo'; // Importe o hook useUser do Clerk
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import CustomBottomSheet from '@/components/CustomBottomSheet';
 import { router } from 'expo-router';
@@ -12,13 +11,14 @@ import { LocationData } from '@/constants/dataTypes';
 import { requestLocationPermission } from '@/utils/permissions';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
+import { useAuth } from '@clerk/clerk-expo';
 
 export default function MapScreen() {
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [locations, setLocations] = useState<LocationData[]>([]);
-  const { user } = useUser(); // Obtém o usuário autenticado
   const [ isSelectingNewMarker, setIsSelectingNewMarker] = useState(false);
+  const { isSignedIn } = useAuth();
 
   const mapRef = useRef(null);
   const markerRefs = useRef([]);
@@ -37,7 +37,6 @@ export default function MapScreen() {
         );
       }
       if(mapRef.current){
-        console.log(location.id);
         const region = {
           latitude: location.latitude,
           longitude: location.longitude,
@@ -85,8 +84,9 @@ export default function MapScreen() {
     if (!isSelectingNewMarker) {
       // Se não estiver selecionando um novo marcador, fecha o BottomSheet
       setSelectedLocation(null);
-    }
+    }else{
     setIsSelectingNewMarker(false); // Reseta o estado de seleção
+    }
   };
 
 
@@ -109,8 +109,11 @@ export default function MapScreen() {
   }
 
   const addNew = () => {
-    Alert.alert("Adicionar novas aplicações ainda não é possível");
-    // router.push({pathname: '/add-new-location'});
+    if(!isSignedIn){
+      Alert.alert("Precisa de conta para adicionar lixeiras");
+      return ;
+    }
+    router.push({pathname: '/add-new-location'});
   }
 
   if (!userLocation) {
@@ -215,9 +218,9 @@ export default function MapScreen() {
           )
         })}
       </MapView>
-      <TouchableOpacity onPress={addNew} style={styles.addBtn}>
-        <AntDesign name="plus" size={40} color="white" />
-      </TouchableOpacity>
+        <TouchableOpacity onPress={addNew} style={styles.addBtn}>
+          <AntDesign name="plus" size={40} color="white" />
+        </TouchableOpacity>
       {
         selectedLocation &&
         <CustomBottomSheet onClose={handleMarkerDeselect} location={selectedLocation} toggleCamera={toggleCamera}/>

@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, Switch, StyleSheet, Alert } from "react-
 import { ScrollView } from "react-native-gesture-handler";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from 'expo-router';
 
 export default function SettingsScreen() {
     const { isLoaded, user } = useUser();
@@ -16,7 +17,6 @@ export default function SettingsScreen() {
     const [darkModeEnabled, setDarkModeEnabled] = useState(false);
 
     if(!isLoaded){
-        console.log('Not loaded')
         return null;
     }
 
@@ -36,6 +36,7 @@ export default function SettingsScreen() {
     // Função para deslogar
     const handleSignOut = () => {
         signOut();
+        router.push('/');
     };
 
     return (
@@ -68,7 +69,7 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Seção de Preferências */}
-                <View style={styles.section}>
+                {/* <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Preferências</Text>
                     <View style={styles.preferenceItem}>
                         <Text>Receber notificações</Text>
@@ -84,7 +85,7 @@ export default function SettingsScreen() {
                             onValueChange={setDarkModeEnabled}
                         />
                     </View>
-                </View>
+                </View> */}
 
                 {/* Botão de Logout */}
                 <View style={styles.section}>

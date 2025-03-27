@@ -1,4 +1,4 @@
-import { handlePicture, useCamera } from '../context/CameraContext'; // Importe o hook do contexto
+import { handlePicture, useCamera } from '../../context/CameraContext'; // Importe o hook do contexto
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useState, useRef } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View, Image, ScrollView } from 'react-native';
@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { useLocalSearchParams } from 'expo-router';
 import { LocationData } from '@/constants/dataTypes';
-import { RouteParams } from 'expo-router';
 
 export default function CameraScreen() {
     const { onPicture, onClose } = useCamera(); // Use o hook do contexto
@@ -35,7 +34,9 @@ export default function CameraScreen() {
 
 
     if (!permission) {
-        return <View />;
+        return <View>
+            Algo correu mal!
+        </View>;
     }
 
     if (!permission.granted) {
