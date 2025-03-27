@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Text, TextInput, TouchableOpacity, View, Alert, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -46,81 +47,83 @@ export default function SignInScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <View style={styles.innerContainer}>
-        <Ionicons name="log-in" size={60} color="#4A90E2" style={styles.icon} />
-        <Text style={styles.title}>Bem-vindo de volta</Text>
-        
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={emailAddress}
-            placeholder="seu@email.com"
-            onChangeText={setEmailAddress}
-            style={styles.input}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Senha</Text>
-          <View style={styles.passwordContainer}>
+    <ScrollView>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <View style={styles.innerContainer}>
+          <Ionicons name="log-in" size={60} color="#4A90E2" style={styles.icon} />
+          <Text style={styles.title}>Bem-vindo de volta</Text>
+          
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
             <TextInput
-              value={password}
-              placeholder="Digite sua senha"
-              secureTextEntry={!showPassword}
-              onChangeText={setPassword}
-              style={[styles.input, { flex: 1 }]}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={emailAddress}
+              placeholder="seu@email.com"
+              onChangeText={setEmailAddress}
+              style={styles.input}
             />
-            <TouchableOpacity 
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <Ionicons 
-                name={showPassword ? 'eye-off' : 'eye'} 
-                size={20} 
-                color="#666" 
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Senha</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                value={password}
+                placeholder="Digite sua senha"
+                secureTextEntry={!showPassword}
+                onChangeText={setPassword}
+                style={[styles.input, { flex: 1 }]}
               />
+              <TouchableOpacity 
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons 
+                  name={showPassword ? 'eye-off' : 'eye'} 
+                  size={20} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity 
+              onPress={() => router.push('/reset-password')}
+              style={styles.forgotPassword}
+            >
+              <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            onPress={() => router.push('/reset-password')}
-            style={styles.forgotPassword}
+
+          <TouchableOpacity
+            onPress={onSignInPress}
+            disabled={isLoading || !emailAddress || !password}
+            style={[styles.button, (isLoading || !emailAddress || !password) && styles.buttonDisabled]}
           >
-            <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Entrar</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ou</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            onPress={() => router.push('/sign-up')}
+            style={styles.secondaryButton}
+          >
+            <Text style={styles.secondaryButtonText}>Criar nova conta</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          onPress={onSignInPress}
-          disabled={isLoading || !emailAddress || !password}
-          style={[styles.button, (isLoading || !emailAddress || !password) && styles.buttonDisabled]}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Entrar</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.dividerContainer}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>ou</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <TouchableOpacity
-          onPress={() => router.push('/sign-up')}
-          style={styles.secondaryButton}
-        >
-          <Text style={styles.secondaryButtonText}>Criar nova conta</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
 

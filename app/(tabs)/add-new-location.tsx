@@ -1,29 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Alert, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, ScrollView, Alert, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Button, TextInput, Card, Title, ActivityIndicator, IconButton } from 'react-native-paper';
-import { db, storage } from '@/firebaseConfig';
+import { db } from '@/firebaseConfig';
 import { addDoc, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import {LocationData} from '@/constants/dataTypes';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { handlePicture } from '@/context/CameraContext';
+import { useUser } from '@clerk/clerk-expo';
 
-interface LocationData {
-  name: string;
-  description: string;
-  latitude: number;
-  longitude: number;
-  address?: string;
-  images: string[];
-}
 
 const AddLocationPage = () => {
+  const {user} = useUser();
   const [formData, setFormData] = useState<LocationData>({
     name: '',
     description: '',
-    latitude: 0,
-    longitude: 0,
+    coordinates:{
+      latitude: 0,
+      longitude: 0,
+    },
     images: []
   });
   
@@ -47,8 +45,7 @@ const AddLocationPage = () => {
       const location = await Location.getCurrentPositionAsync({});
       setFormData({
         ...formData,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude
+        coordinates: location.coords
       });
 
       // Obter endereço aproximado
@@ -115,54 +112,70 @@ const AddLocationPage = () => {
 
   // 5. ENVIAR PARA O FIREBASE
   const handleSubmit = async () => {
+    // Validação básica dos campos obrigatórios
     if (!formData.name || !formData.description) {
       Alert.alert('Atenção', 'Preencha pelo menos o nome e descrição');
       return;
     }
-
+  
+    // Verifica se há coordenadas válidas
+    if (!formData.coordinates || !formData.coordinates.latitude || !formData.coordinates.longitude) {
+      Alert.alert('Atenção', 'Localização geográfica é obrigatória');
+      return;
+    }
+  
     setLoading(prev => ({...prev, submit: true}));
-
+  
     try {
-      // Upload das imagens primeiro
-      const imageUrls = await Promise.all(
-        formData.images.map(async (uri, index) => {
-          const response = await fetch(uri);
-          const blob = await response.blob();
-          const filename = uri.substring(uri.lastIndexOf('/') + 1);
-          const storageRef = ref(storage, `locations/${Date.now()}_${filename}`);
-          await uploadBytes(storageRef, blob);
-          return await getDownloadURL(storageRef);
-        })
-      );
-
-      // Salvar todos os dados no Firestore
-      await addDoc(collection(db, 'locations'), {
-        ...formData,
-        images: imageUrls,
+      // 1. Primeiro salva os dados básicos no Firestore
+      const docRef = await addDoc(collection(db, 'locations'), {
+        name: formData.name,
+        description: formData.description,
+        coordinates: formData.coordinates,
+        color: formData.color || '#1da1f2', // Cor padrão se não for fornecida
+        icon: formData.icon || 'map-marker', // Ícone padrão
+        address: formData.address || '',
+        images: [], // Inicialmente vazio, será atualizado depois
         createdAt: new Date(),
+        createdBy: user?.username || 'anonymous',
+        updatedAt: new Date()
       });
-
+  
+      // 2. Se houver imagens para upload, processa-as
+      if (formData.images && formData.images.length > 0) {
+        try {
+          // Cria o objeto de localização para passar ao handlePicture
+          const newLocation: LocationData = {
+            id: docRef.id,
+            ...formData,
+            images: [] // Serão atualizadas pelo upload
+          };
+  
+          // Executa o upload das fotos e atualização no Firebase
+          await handlePicture(formData.images, newLocation);
+        } catch (uploadError) {
+          console.error("Erro no upload de imagens:", uploadError);
+          // Não interrompe o fluxo principal, apenas registra o erro
+        }
+      }
+  
+      // Feedback de sucesso
       Alert.alert('Sucesso!', 'Localização salva com sucesso');
       router.back();
-      
+  
     } catch (error) {
-      console.error("Firebase error:", error);
-      Alert.alert('Erro', 'Ocorreu um erro ao salvar');
+      console.error("Erro ao salvar localização:", error);
+      Alert.alert('Erro', 'Ocorreu um erro ao salvar a localização');
     } finally {
       setLoading(prev => ({...prev, submit: false}));
     }
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* CABEÇALHO */}
         <View style={styles.header}>
-          <IconButton
-            icon="arrow-left"
-            size={24}
-            onPress={() => router.back()}
-          />
           <Title style={styles.title}>Adicionar Local</Title>
         </View>
 
@@ -206,14 +219,14 @@ const AddLocationPage = () => {
               <View style={styles.coordinatesContainer}>
                 <TextInput
                   label="Latitude"
-                  value={formData.latitude.toString()}
+                  value={formData.coordinates.latitude.toString()}
                   style={styles.coordinateInput}
                   mode="outlined"
                   editable={false}
                 />
                 <TextInput
                   label="Longitude"
-                  value={formData.longitude.toString()}
+                  value={formData.coordinates.longitude.toString()}
                   style={styles.coordinateInput}
                   mode="outlined"
                   editable={false}
@@ -232,6 +245,7 @@ const AddLocationPage = () => {
             {/* FOTOS */}
             <View style={styles.section}>
               <Title style={styles.sectionTitle}>Fotos</Title>
+              <Text>Guarde fotos com a camara e selecione-as aqui</Text>
               
               <Button 
                 mode="contained-tonal" 
@@ -271,7 +285,7 @@ const AddLocationPage = () => {
           Salvar Localização
         </Button>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -288,12 +302,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginLeft: 8,
   },
   card: {
     borderRadius: 12,

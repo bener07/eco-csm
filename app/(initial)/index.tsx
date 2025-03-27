@@ -19,6 +19,7 @@ export default function MapScreen() {
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [ isSelectingNewMarker, setIsSelectingNewMarker] = useState(false);
   const { isSignedIn } = useAuth();
+  const [loading, setLoading] = useState(true);
 
   const mapRef = useRef(null);
   const markerRefs = useRef([]);
@@ -38,8 +39,8 @@ export default function MapScreen() {
       }
       if(mapRef.current){
         const region = {
-          latitude: location.latitude,
-          longitude: location.longitude,
+          latitude: location.coordinates.latitude,
+          longitude: location.coordinates.longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         };  
@@ -52,7 +53,31 @@ export default function MapScreen() {
 
   // Obtém a localização atual do usuário
   useEffect(() => {
-    requestLocationPermission(setUserLocation);
+    const fetchLocation = async () => {
+      try {
+        const location = await requestLocationPermission();
+        
+        if (!location) {
+          setLoading(true);
+          return;
+        }
+  
+        const coords = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude
+        };
+        
+        setUserLocation(coords);
+        setLoading(false);
+  
+      } catch (err) {
+        console.error("Error getting location:", err);
+        // setError('Não foi possível obter a localização');
+        setLoading(false);
+      }
+    };
+  
+    fetchLocation();
   }, []);
 
   // Busca os locais do Firestore em tempo real
@@ -93,13 +118,13 @@ export default function MapScreen() {
 
   const toggleCamera = () => {
     router.push({
-      pathname: '/camera',
+      pathname: '/(tabs)/camera',
       params: {
         id: selectedLocation?.id,
         name: selectedLocation?.name,
         description: selectedLocation?.description,
-        latitude: selectedLocation?.latitude.toString(), // Converte número para string
-        longitude: selectedLocation?.longitude.toString(),
+        latitude: selectedLocation?.coordinates.latitude.toString(), // Converte número para string
+        longitude: selectedLocation?.coordinates.longitude.toString(),
         color: selectedLocation?.color,
         icon: selectedLocation?.icon,
         images: JSON.stringify(selectedLocation?.images), // Converte array para string JSON
@@ -111,12 +136,12 @@ export default function MapScreen() {
   const addNew = () => {
     if(!isSignedIn){
       Alert.alert("Precisa de conta para adicionar lixeiras");
-      return ;
+    }else{
+      router.push({pathname: '/add-new-location'});
     }
-    router.push({pathname: '/add-new-location'});
   }
 
-  if (!userLocation) {
+  if (!userLocation && loading) {
     return (
       <View style={styles.container}>
         <Text>Carregando localização...</Text>
@@ -178,35 +203,25 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         initialRegion={{
-          latitude: userLocation.coords.latitude,
-          longitude: userLocation.coords.longitude,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
+          latitude: userLocation?.latitude || 38.7223, // Default to Lisbon coordinates
+          longitude: userLocation?.longitude || -9.1393,
+          latitudeDelta: 0.09622,
+          longitudeDelta: 0.09622,
         }}
-        showsUserLocation={true}
+        showsUserLocation={!!userLocation} // Only show if we have user location
         customMapStyle={mapStyle}
       >
-        {/* Marcador da localização atual do usuário */}
-        <Marker
-          coordinate={{
-            latitude: userLocation.coords.latitude,
-            longitude: userLocation.coords.longitude,
-          }}
-          title="Sua localização"
-          description="Você está aqui!"
-        >
-            <MaterialIcons name="person-pin-circle" size={24} color="#d17a22" />
-        </Marker>
 
         {/* Marcadores dos locais do banco de dados */}
         {locations.map((loc) =>{
+          console.log(loc.coordinates);
           return (
           <Marker
             ref={(ref) => (markerRefs.current[loc.id] = ref)}
             key={loc.id}
             coordinate={{
-              latitude: loc.latitude,
-              longitude: loc.longitude,
+              latitude: loc.coordinates.latitude,
+              longitude: loc.coordinates.longitude,
             }}
             title={loc.name}
             description={loc.description}
@@ -291,5 +306,17 @@ const styles = StyleSheet.create({
   calloutDescription: {
     fontSize: 14,
     color: '#666',
+  },
+
+  searchContainer: {
+    position: 'absolute',
+    top: 30,
+    left: 10,
+    backgroundColor: 'red',
+    width: '80%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 1000,
+    height: 40,
   },
 });

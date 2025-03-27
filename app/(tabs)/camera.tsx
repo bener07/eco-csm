@@ -35,7 +35,7 @@ export default function CameraScreen() {
 
     if (!permission) {
         return <View>
-            Algo correu mal!
+            <Text>Algo correu mal!</Text>
         </View>;
     }
 
@@ -88,18 +88,12 @@ export default function CameraScreen() {
                         <MaterialCommunityIcons name="camera-flip" size={24} color="white" />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.button} onPress={takePicture}>
+                    <TouchableOpacity style={[styles.button, styles.photoBtn]} onPress={takePicture}>
                         <MaterialCommunityIcons name="camera" size={24} color="white" />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={[styles.button]} onPress={pickImage}>
                         <MaterialCommunityIcons name="image" size={24} color="white" />
-                    </TouchableOpacity>
-                </View>
-                <View style={styles.customHeader}>
-                    <Text style={styles.headerText}>Camâra</Text>
-                    <TouchableOpacity style={[styles.button, {position: 'absolute', right: 10}]} onPress={onClose}>
-                        <MaterialCommunityIcons name="close" size={24} color="white" />
                     </TouchableOpacity>
                 </View>
             </CameraView>
@@ -168,8 +162,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         elevation: 20,
     },
+    photoBtn:{
+        backgroundColor: Colors.primary.icon,
+        borderRadius: 50,
+    },
     button: {
+        width: 55,
+        height: 55,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     buttonText: {
         color: 'white',

@@ -1,8 +1,10 @@
 import { Redirect, Stack } from 'expo-router'
-import { View, Text, TouchableOpacity} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export default function AuthRoutesLayout() {
   const { isSignedIn } = useAuth()
@@ -14,10 +16,9 @@ export default function AuthRoutesLayout() {
   return (
   <>
     <View style={styles.closeBtnView}>
-      <TouchableOpacity onPress={() => {console.log('Button Clicked');router.back()}}>
-        <Ionicons name="arrow-back" style={styles.closeBtn} size={25} color="black" />
+      <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+        <Ionicons name="arrow-back" size={25} color="black" />
       </TouchableOpacity>
-      <Text style={styles.screenText}></Text>
     </View>
     <Stack>
       <Stack.Screen name="sign-in" options={{ title: 'Login', headerShown: false }} />
@@ -29,28 +30,24 @@ export default function AuthRoutesLayout() {
   );
 }
 
-const styles = {
-  screenText: {
-
-  },
-
+const styles = StyleSheet.create({
   closeBtn: {
     color: 'black',
     fontSize: 25,
     fontWeight: 'bold',
     position: 'absolute',
     left: 20,
+    width: 40,
+    height: 40
   },
 
   closeBtnView: {
     position: 'absolute',
     top: 0,
     zIndex: 100,
-    elevation: 10,
     width: '100%',
-    height: 70,
-    backgroundColor: 'white',
+    height: 100,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
-    shadowColor: 'black',
   }
-}
+});

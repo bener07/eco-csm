@@ -2,13 +2,16 @@ export interface LocationData {
     id: number;
     name: string;
     description: string;
-    latitude: number;
-    longitude: number;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
     color: string;
     icon: string;
     images: string[];
     address: string;
     aditional: string | undefined;
+    createdBy: string;
   }
 
 export interface Article {

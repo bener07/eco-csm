@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Switch, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, Button, TouchableOpacity, Linking, StyleSheet, Alert } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +19,12 @@ export default function SettingsScreen() {
     if(!isLoaded){
         return null;
     }
+
+    const handlePress = () => {
+        Linking.openURL('https://github.com/bener07').catch(err => {
+          console.error("Failed to open URL:", err);
+        });
+      };    
 
     // Função para atualizar o perfil
     const handleUpdateProfile = async () => {
@@ -90,6 +96,12 @@ export default function SettingsScreen() {
                 {/* Botão de Logout */}
                 <View style={styles.section}>
                     <Button title="Sair" onPress={handleSignOut} color="red" />
+                    <View style={styles.linkContainer}>
+                        <Text style={styles.text}>Desenvolvido por </Text>
+                        <TouchableOpacity onPress={handlePress}>
+                            <Text style={[styles.text, styles.link]}>bener07</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
                 <View style={{ height: 50 }}></View>
             </ScrollView>
@@ -98,6 +110,21 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+    linkContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginVertical: 20,
+      },
+    text: {
+        fontSize: 14,
+        color: '#666',
+      },
+    link: {
+    color: '#1da1f2',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+    },
     container: {
         flex: 1,
         padding: 16,

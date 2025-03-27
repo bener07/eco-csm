@@ -1,26 +1,29 @@
 import { useLocalSearchParams } from 'expo-router';
 import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ArticleDetails() {
   const { id, title, content, author, date, image } = useLocalSearchParams();
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Imagem do Artigo */}
-      <Image source={{ uri: image || 'https://t3.ftcdn.net/jpg/03/45/05/92/360_F_345059232_CPieT8RIWOUk4JqBkkWkIETYAkmz2b75.jpg' }} style={styles.image} />
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.container}>
+        {/* Imagem do Artigo */}
+        <Image source={{ uri: image || 'https://t3.ftcdn.net/jpg/03/45/05/92/360_F_345059232_CPieT8RIWOUk4JqBkkWkIETYAkmz2b75.jpg' }} style={styles.image} />
 
-      {/* Título do Artigo */}
-      <Text style={styles.title}>{title}</Text>
+        {/* Título do Artigo */}
+        <Text style={styles.title}>{title}</Text>
 
-      {/* Informações do Artigo (Autor e Data) */}
-      <View style={styles.metaContainer}>
-        <Text style={styles.metaText}>Por {author}</Text>
-        <Text style={styles.metaText}>Publicado a {date}</Text>
-      </View>
+        {/* Informações do Artigo (Autor e Data) */}
+        <View style={styles.metaContainer}>
+          <Text style={styles.metaText}>Por {author}</Text>
+          <Text style={styles.metaText}>Publicado a {date}</Text>
+        </View>
 
-      {/* Conteúdo do Artigo */}
-      <Text style={styles.content}>{content}</Text>
-    </ScrollView>
+        {/* Conteúdo do Artigo */}
+        <Text style={styles.content}>{content}</Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

@@ -1,3 +1,4 @@
+//#region Imports
 import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import {
   View,
@@ -6,17 +7,22 @@ import {
   Image,
   Dimensions,
   TouchableOpacity,
-  NativeSyntheticEvent,
-  NativeScrollEvent, 
+  Linking,
   RefreshControl
 } from 'react-native';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FlatGrid } from 'react-native-super-grid';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LocationData } from '@/constants/dataTypes';
-import { ScrollView } from 'react-native-gesture-handler';
 import RenderHTML from 'react-native-render-html';
+import MapView, { Marker } from 'react-native-maps';
+import * as Clipboard from 'expo-clipboard';
+import { showMessage } from 'react-native-flash-message';
+import { ScrollView } from 'react-native-gesture-handler';
+import {openDirectionsInGoogleMaps} from '@/utils/maps';
+import ImageGallery from './ImageGallery'; // Ajuste o caminho
+
+//#endregion
 
 interface BottomSheetProps {
   location: LocationData | null;
@@ -24,16 +30,16 @@ interface BottomSheetProps {
   toggleCamera: () => void;
 }
 
-const CustomBottomSheet: React.FC<BottomSheetProps> = ({ location, onClose, toggleCamera}) => {
-  //#region contstants
+const CustomBottomSheet: React.FC<BottomSheetProps> = ({ location, onClose, toggleCamera }) => {
+  //#region constants
   const bottomSheetRef = useRef<BottomSheet>(null);
   const screenWidth = Dimensions.get('window').width;
-  const [isFullHeader, setFullHeader] = useState(true);
   const [currentSnapIndex, setCurrentSnapIndex] = useState(0);
-  const [refreshing, setRefreshing] = useState(false); 
+  const [refreshing, setRefreshing] = useState(false);
+  const { bottom: bottomSafeArea } = useSafeAreaInsets();
   //#endregion
 
-
+  //#region effects
   useEffect(() => {
     if (location == null) {
       bottomSheetRef.current?.close();
@@ -41,25 +47,41 @@ const CustomBottomSheet: React.FC<BottomSheetProps> = ({ location, onClose, togg
       bottomSheetRef.current?.collapse();
     }
   }, [location]);
-
-
-  //#region hooks
-  const { bottom: bottomSafeArea } = useSafeAreaInsets();
   //#endregion
 
   //#region callbacks
   const handleSheetChanges = useCallback((index: number) => {
-    if(index >= 2){
-      setFullHeader(true);
-    }else{
-      setFullHeader(false);
-    }
     setCurrentSnapIndex(index);
   }, []);
 
   const handleClose = () => {
     bottomSheetRef.current?.close();
     onClose();
+  };
+
+  const handleOpenMaps = () => {
+    if (!location?.coordinates) return;
+    
+    const { latitude, longitude } = location.coordinates;
+    const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    
+    Linking.openURL(url).catch(err => {
+      showMessage({
+        message: "Não foi possível abrir o mapa",
+        description: "Verifique se você tem um aplicativo de mapas instalado",
+        type: "danger",
+      });
+    });
+  };
+
+  const handleCopyAddress = async () => {
+    if (!location?.address) return;
+    
+    await Clipboard.setStringAsync(location.address);
+    showMessage({
+      message: "Endereço copiado!",
+      type: "success",
+    });
   };
   //#endregion
 
@@ -72,234 +94,315 @@ const CustomBottomSheet: React.FC<BottomSheetProps> = ({ location, onClose, togg
     [bottomSafeArea]
   );
 
-  const closeButtonStyle = useMemo(
-    () => ({
-      ...styles.closeButton,
-      backgroundColor: '#f0f0f0', // Cor de fundo do botão de fechar
-    }),
-    []
-  );
+  const getMapStyle = () => ({
+    height: currentSnapIndex >= 2 ? 200 : 100,
+    borderRadius: 12,
+    marginVertical: 10,
+    overflow: 'hidden',
+  });
   //#endregion
 
-  //#region functions
-  const onRefresh = () => {
-    setRefreshing(true); // Ativa o estado de refreshing
+  //#region render helpers
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <View style={styles.headerContent}>
+        <View style={[styles.iconContainer, { backgroundColor: location?.color || '#027AFF' }]}>
+          <MaterialCommunityIcons 
+            name={location?.icon || 'map-marker'} 
+            size={24} 
+            color="white" 
+          />
+        </View>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.name} numberOfLines={1}>{location?.name || 'Local'}</Text>
+          <TouchableOpacity onPress={handleCopyAddress}>
+            <Text style={styles.address} numberOfLines={1}>
+              {location?.address || 'Endereço não disponível'}
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.madeBy}>Registado por {location?.createdBy}</Text>
+        </View>
+      </View>
+      <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+        <MaterialCommunityIcons name="close" size={24} color="#666" />
+      </TouchableOpacity>
+    </View>
+  );
 
-    // Lógica do bottom sheet
-    bottomSheetRef.current?.snapToIndex(currentSnapIndex - 1);
-    setCurrentSnapIndex(currentSnapIndex - 1);
-
-    // Simula uma operação assíncrona (ex.: buscar dados)
-    setTimeout(() => {
-      setRefreshing(false); // Desativa o estado de refreshing
-      console.log('Refresh completo!');
-    }, 2000); // 2 segundos de delay 
+  const renderMap = () => {
+    if (!location?.coordinates) return null;
+    
+    return (
+      <TouchableOpacity activeOpacity={0.9} onPress={handleOpenMaps}>
+        <MapView
+          style={getMapStyle()}
+          initialRegion={{
+            latitude: location.coordinates.latitude,
+            longitude: location.coordinates.longitude,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          }}
+          scrollEnabled={false}
+          zoomEnabled={false}
+        >
+          <Marker
+            coordinate={{
+              latitude: location.coordinates.latitude,
+              longitude: location.coordinates.longitude,
+            }}
+          >
+            <View style={[styles.marker, { backgroundColor: location?.color || '#027AFF' }]}>
+              <MaterialCommunityIcons name={location?.icon || 'map-marker'} size={20} color="white" />
+            </View>
+          </Marker>
+        </MapView>
+      </TouchableOpacity>
+    );
   };
 
-  //#endregion
+  const renderImages = () => {
+    if (!location?.images || location.images.length === 0) return null;
+    
+    return (
+      <View style={styles.imagesContainer}>
+        <Text style={styles.sectionTitle}>Fotos</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.imagesScrollContent}
+        >
+          {location.images.length >0 &&
+          location.images.map((uri, index) => (
+            <TouchableOpacity key={index} activeOpacity={0.8}>
+              <Image source={{ uri }} style={styles.image} />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+  
 
-  //#region renders
+  const renderAdditionalInfo = () => {
+    if (!location?.aditional) return null;
+    
+    return (
+      <View style={styles.additionalInfoContainer}>
+        <Text style={styles.sectionTitle}>Informações Adicionais</Text>
+        <View style={styles.htmlContainer}>
+          <RenderHTML 
+            contentWidth={screenWidth - 40} 
+            source={{ html: location.aditional }} 
+            baseStyle={styles.htmlBaseStyle}
+          />
+        </View>
+      </View>
+    );
+  };
   //#endregion
 
   return (
-      <BottomSheet
-        ref={bottomSheetRef}
-        onChange={handleSheetChanges}
-        snapPoints={['25%', '50%','75%', '90%']}
-        index={currentSnapIndex}
+    <BottomSheet
+      ref={bottomSheetRef}
+      onChange={handleSheetChanges}
+      snapPoints={['30%', '60%', '85%']}
+      index={currentSnapIndex}
+      backgroundStyle={styles.background}
+      handleIndicatorStyle={styles.handleIndicator}
+    >
+      <BottomSheetScrollView 
+        style={contentContainerStyle}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={() => setRefreshing(false)} 
+            colors={['#027AFF']}
+          />
+        }
       >
-        <BottomSheetView style={contentContainerStyle}>
-            <View style={styles.headerContainer}>
-              <View style={styles.headerContentContainer}>
-                <Text style={styles.name}>{location?.name || 'Local'}</Text>
-                <Text style={styles.address}>
-                  {location?.address || 'Endereço não disponível'}
-                </Text>
-              </View>
-
-                {/* Botão de fechar */}
-              <TouchableOpacity style={closeButtonStyle} onPress={handleClose}>
-                <MaterialCommunityIcons name="close-circle-outline" size={30} color="black" />
-              </TouchableOpacity>
+        {renderHeader()}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.cameraButton]} 
+            onPress={toggleCamera}
+          >
+            <MaterialCommunityIcons name="camera-plus" size={20} color="white" />
+            <Text style={styles.buttonText}>Fotos</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.googleButton]}
+            onPress={() => openDirectionsInGoogleMaps(location?.coordinates)}
+          >
+            <View style={styles.googleIconContainer}>
+              <MaterialCommunityIcons name="google-maps" size={20} color="white" />
             </View>
-            <View style={styles.actionsContainer}>
-              <Text style={styles.description}>
-                {location?.description}
-              </Text>
-              <TouchableOpacity style={styles.actionButton} onPress={toggleCamera}>
-                <MaterialCommunityIcons name="camera-plus" size={30} color="white" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-              showsVerticalScrollIndicator={false} // Oculta o scroll vertical
-              contentContainerStyle={{ padding: 10 }} // Ajusta o padding do conteúdo
-              contentInset={{ top: 10 }} // Ajusta o topo do conteúdo
-              onScroll={({ nativeEvent }) => {
-                const { contentOffset } = nativeEvent;
-                if (contentOffset.y <= -100) {
-                  setFullHeader(true);
-                } else {
-                  setFullHeader(false);
-                }
-              }}
-            >
+            <Text style={styles.buttonText}>Direções</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.description}>{location?.description}</Text>
+        </View>
 
-              {/* Lista de imagens */}
-              {location?.images && location.images.length > 0 && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                  {location.images.map((item, index) => (
-                    <Image
-                      key={index}
-                      style={styles.photo}
-                      source={{ uri: item }}
-                      resizeMode="cover"
-                    />
-                  ))}
-                </View>
-              )}
-
-              {/* Conteúdo adicional (RenderHTML) */}
-              <View style={{ padding: 10, marginTop: 20, marginBottom: 20 }}>
-                <RenderHTML contentWidth={screenWidth - 20} source={{ html: location?.aditional || '' }} />
-              </View>
-            </ScrollView>
-        </BottomSheetView>
-      </BottomSheet>
+        <ImageGallery
+          images={location?.images || []} 
+          thumbnailSize={200}
+          containerStyle={{ marginTop: 15 }}
+          thumbnailStyle={{ borderRadius: 10 }}
+        />
+      </BottomSheetScrollView>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: 'none',
-    position:'absolute',
-    bottom: 0,
-    height: '100%',
+  background: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  handleIndicator: {
+    backgroundColor: '#ccc',
+    width: 40,
+    height: 5,
   },
   contentContainer: {
     flex: 1,
-    minHeight: 200,
-    padding: 10,
+    paddingHorizontal: 20,
   },
-  // Full Header
-  fullHeaderContainer: {
-    flexDirection: 'column',
-    paddingTop: 15,
-    paddingHorizontal: 16,
-  },
-  fullHeaderContentContainer: {
-    flexGrow: 1,
-    marginTop: 20,
-  },
-  fullHeaderName:{
-    fontSize: 35,
-    lineHeight: 35,
-    fontWeight: '700',
-    width: '100%',
-    marginTop: 20,
-  },
-  fullHeaderCloseButton:{
-    position: 'absolute',
-    top: 0,
-    right: 5,
-    width: 30,
-    height: 30,
-  },
-  // Header
   headerContainer: {
     flexDirection: 'row',
-    paddingBottom: 8,
-    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  headerContentContainer: {
-    flexGrow: 1,
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   name: {
-    fontSize: 22,
-    lineHeight: 22,
-    width: '90%',
+    fontSize: 20,
     fontWeight: '700',
+    color: '#333',
   },
   address: {
-    marginTop: 4,
     fontSize: 14,
-    lineHeight: 14,
-    fontWeight: '400',
     color: '#666',
-    width: 200
+    marginTop: 4,
+  },
+  madeBy: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
   closeButton: {
-    alignContent: 'center',
-    alignItems: 'center',
-    width: 30,
-    height: 30,
-    borderRadius: 30,
-    padding: 0,
-    margin: 0,
+    padding: 8,
+    marginLeft: 10,
   },
-  closeText: {
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 30,
+  descriptionContainer: {
+    marginVertical: 15,
   },
   description: {
     fontSize: 15,
+    lineHeight: 22,
+    color: '#444',
   },
-  // Photos
-  flatListContainer: {
-    paddingVertical: 100,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
   },
-  flatListContentContainer: {
-    paddingHorizontal: 16,
+  imagesContainer: {
+    marginTop: 20,
   },
-  separator: {
-    width: 4,
+  imagesScrollContent: {
+    paddingRight: 20,
   },
-  photo: {
-    width: 100, // Largura de cada item
-    height: 100, // Altura de cada item
-    marginBottom: 20, // Espaçamento entre os itens
-    borderRadius: 8, // Bordas arredondadas
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 10,
+    marginRight: 10,
   },
-  scrollView: {
-    height: 300, // Altura da ScrollView (ajuste conforme necessário)
+  additionalInfoContainer: {
+    marginTop: 20,
   },
-  scrollViewContent: {},
-  imageContainer: {
-    width: 300, // Largura de cada item
-    height: 300, // Altura de cada item
-    marginRight: 10, // Espaçamento entre os itens
-    borderRadius: 8, // Bordas arredondadas
-    overflow: 'hidden', // Garante que a imagem respeite o borderRadius
+  htmlContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    padding: 15,
   },
-  fullHeaderPhoto: {
-    width: '100%',
-    height: '100%',
+  htmlBaseStyle: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 20,
   },
-
-  // Actions
   actionsContainer: {
-    paddingVertical: 8,
-    paddingLeft: 16,
-    paddingRight: 8,
-    flexDirection: 'column',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 40,
+    marginTop: 20,
+    gap: 12, // Espaço entre botões
   },
   actionButton: {
-    flex: 1,
-    marginRight: 8,
+    flex: 1, // Ocupa espaço igual
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
-    minHeight: 40,
-    backgroundColor: '#027AFF',
+    paddingVertical: 12,
+    borderRadius: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
-  actionButtonLabel: {
+  cameraButton: {
+    backgroundColor: '#027AFF', // Azul consistente com seu tema
+  },
+  googleButton: {
+    backgroundColor: '#db4437', // Azul oficial do Google
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  googleIconContainer: {
+    marginRight: 8,
+  },
+  buttonText: {
     color: 'white',
+    fontSize: 15,
     fontWeight: '600',
+    marginLeft: 4,
+  },
+
+  marker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
 
