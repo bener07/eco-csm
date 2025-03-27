@@ -50,6 +50,15 @@
           "backgroundColor": "#ffffff"
         }
       ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "-keep class com.facebook.react.** { *; }",
+            "enableProguardInReleaseBuilds": true
+          }
+        }
+      ],
       "expo-location",
       [
         "expo-camera",
