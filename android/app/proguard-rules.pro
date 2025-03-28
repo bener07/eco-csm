@@ -15,20 +15,6 @@
 
 # @generated begin expo-build-properties - expo prebuild (DO NOT MODIFY)
 -keep class com.facebook.react.** { *; }
-# @generated end expo-build-properties
-
-# React Native
--keep class com.facebook.react.** { *; }
 -keep class com.facebook.hermes.** { *; }
--keep class com.facebook.jni.** { *; }
-
-# Expo
 -keep class expo.modules.** { *; }
-
-# Firebase (se estiver usando)
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
-
-# Outras bibliotecas
--keep class com.swmansion.** { *; }
--keep class com.reactnativecommunity.** { *; }
+# @generated end expo-build-properties
