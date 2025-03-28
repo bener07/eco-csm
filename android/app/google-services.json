@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "711637616635",
+    "project_id": "eco-csm",
+    "storage_bucket": "eco-csm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711637616635:android:6ca2583ab91fcc98cbad5e",
+        "android_client_info": {
+          "package_name": "eco_csm.csmiguel.pt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClBURtvv_YnWO10-r4NzHhO0tA0KgR2Lg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

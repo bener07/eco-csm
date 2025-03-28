@@ -54,8 +54,8 @@
         "expo-build-properties",
         {
           "android": {
-            "extraProguardRules": "-keep class com.facebook.react.** { *; }",
-            "enableProguardInReleaseBuilds": true
+            "enableProguardInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.facebook.react.** { *; }\n-keep class com.facebook.hermes.** { *; }\n-keep class expo.modules.** { *; }"
           }
         }
       ],
