@@ -10,7 +10,7 @@ export default function AuthRoutesLayout() {
   const { isSignedIn } = useAuth()
 
   if (!isSignedIn) {
-    Alert.alert('Conta obrigatória!', 'precisa de ter conta para tirar fotografias!');
+    Alert.alert('Conta obrigatória!', 'Precisa de conta para aceder a estas páginas!');
     return <Redirect href={'/'}/>
   }
 

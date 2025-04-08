@@ -69,7 +69,6 @@ export default function CameraScreen() {
 
         if (!result.canceled) {
             setPhotos([...photos, result.assets[0].uri]);
-            onPicture(result.assets[0].uri); // Usa a função onPicture do contexto
         }
     };
 

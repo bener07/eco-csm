@@ -43,7 +43,7 @@
     "geofirestore": "^5.2.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-native": "0.76.7",
+    "react-native": "0.76.9",
     "react-native-flash-message": "^0.4.2",
     "react-native-geocoding": "^0.5.0",
     "react-native-geolocation-service": "^5.3.1",

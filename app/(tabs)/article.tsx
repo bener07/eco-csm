@@ -22,6 +22,7 @@ export default function ArticleDetails() {
 
         {/* Conteúdo do Artigo */}
         <Text style={styles.content}>{content}</Text>
+        <View style={{height: 50}}></View>
       </ScrollView>
     </SafeAreaView>
   );

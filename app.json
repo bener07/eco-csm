@@ -72,7 +72,6 @@
             }
           },
           "ios": {
-            "deploymentTarget": "14.0",
             "useFrameworks": "static",
             "flipper": false
           }
